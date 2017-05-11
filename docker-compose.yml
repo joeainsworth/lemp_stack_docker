@@ -1,0 +1,47 @@
+version: "3.0"
+
+services:
+    nginx:
+        build: ./nginx/
+        ports:
+            - 80:80
+        volumes:
+            - "${PROJECT_ROOT}:/var/www/html:ro" # bind mounting
+        networks:
+            - server
+        depends_on:
+            - php
+
+    php:
+        build: ./php/
+        expose:
+            - 9000
+        volumes:
+            - "${PROJECT_ROOT}:/var/www/html" # bind mounting
+        networks:
+            - database
+            - server
+        depends_on:
+            - mysql
+
+    mysql:
+        image: mysql:latest
+        ports:
+            - "4306:3306" # map port to 4306 to avoid connection issues if you have a local MySQL server
+        volumes:
+            - ./db/:/docker-entrypoint-initdb.d # run any .sh or .sql scripts in the db folder
+            - data:/var/lib/mysql # persist MySQL data, unless using 'docker-compose down -v'
+        networks:
+            - database
+        environment:
+            MYSQL_ROOT_PASSWORD: "${DB_ROOT_PASSWORD}"
+            MYSQL_DATABASE: "${DB_NAME}"
+            MYSQL_USER: "${DB_USERNAME}"
+            MYSQL_PASSWORD: "${DB_PASSWORD}"
+
+volumes:
+    data:
+
+networks:
+    database:
+    server:
